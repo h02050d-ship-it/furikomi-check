@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>振込照合デスク</title>
+  <meta name="description" content="遠州信金WEB-FB用CSVのダウンロードと振込照合">
+  <link rel="icon" href='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" rx="13" fill="%231b6b52"/><text x="32" y="45" text-anchor="middle" font-size="39" font-family="sans-serif" font-weight="700" fill="white">振</text></svg>'>
+  <style>
+    :root{--ink:#18312a;--green:#1b6b52;--green2:#e8f4ee;--paper:#f4f2eb;--line:#d8d4c8;--red:#b3261e;--yellow:#ffe066;--muted:#68736f}
+    *{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:"Yu Gothic UI","Hiragino Kaku Gothic ProN",sans-serif;min-width:1050px}
+    header{height:76px;background:#fff;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 36px;position:sticky;top:0;z-index:5}
+    h1{font-size:23px;margin:0;letter-spacing:.04em}.brand{display:flex;align-items:center;gap:13px}.logo{width:40px;height:40px;border-radius:9px;background:var(--green);color:#fff;display:grid;place-items:center;font-size:25px;font-weight:700}
+    .live{font-size:13px;color:var(--green);font-weight:700}.logout{border:0;background:transparent;color:var(--muted);cursor:pointer}
+    main{display:grid;grid-template-columns:minmax(650px,1fr) 370px;gap:26px;max-width:1450px;margin:0 auto;padding:28px 34px 60px}
+    .section-title{display:flex;justify-content:space-between;align-items:end;margin:0 0 15px}.section-title h2{margin:0;font-size:19px}.section-title span{color:var(--muted);font-size:13px}
+    #cards{display:grid;gap:14px}.card{background:#fff;border:2px solid transparent;border-radius:16px;padding:20px 22px;display:grid;grid-template-columns:1fr auto;gap:18px;box-shadow:0 3px 14px #263b3120;transition:.2s}
+    .card.next{border-color:var(--green);box-shadow:0 0 0 3px #1b6b521c,0 5px 18px #263b3125}.card.checked{background:#e9f5ee;opacity:.72}.card.checked .card-main{text-decoration:line-through;text-decoration-color:#6d9c88}
+    .company{font-size:22px;font-weight:800}.amount{font:800 36px/1.2 "Arial",sans-serif;display:inline-block;margin:8px 0 12px;background:linear-gradient(transparent 45%,var(--yellow) 45%);letter-spacing:.02em}
+    .bank{font-size:13px;color:var(--muted);display:flex;gap:10px;flex-wrap:wrap}.bank span+span:before{content:"／";margin-right:10px;color:#aaa}
+    .check{display:flex;align-items:center;gap:9px;font-size:18px;font-weight:800;cursor:pointer;align-self:center}.check input{width:30px;height:30px;accent-color:var(--green)}
+    aside{position:sticky;top:102px;align-self:start;display:grid;gap:14px}.panel{background:#fff;border:1px solid var(--line);border-radius:15px;padding:19px}.panel h3{font-size:15px;margin:0 0 13px}.progress-label{font-size:23px;font-weight:800}.bar{height:11px;background:#e5e3db;border-radius:99px;overflow:hidden;margin-top:12px}.bar i{display:block;height:100%;background:var(--green);width:0;transition:.2s}
+    .total-label{font-size:12px;color:var(--muted)}.total{font:bold 29px Arial;margin:4px 0 13px;display:inline-block;background:linear-gradient(transparent 45%,var(--yellow) 45%)}.row{display:flex;justify-content:space-between;font-size:14px;padding:5px 0}.diff{font-weight:800}
+    .download{width:100%;border:0;border-radius:12px;background:var(--green);color:#fff;font-size:17px;font-weight:800;padding:15px;cursor:pointer}.download:disabled{opacity:.45;cursor:not-allowed}
+    .warning{border-color:#efb7b3;background:#fff9f8}.warning h3{color:var(--red)}.warn-item{color:var(--red);font-size:13px;padding:8px 0;border-top:1px solid #f4d2cf}.warn-item b{display:block}
+    .minor{background:#f0f0ed}.minor-item{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-top:1px solid #ddd}.howto{font-size:13px;line-height:1.8}.foot{font-size:11px;color:var(--muted);margin-top:10px}
+    .empty,.loading{background:#fff;border-radius:15px;padding:45px;text-align:center;color:var(--muted)}.spin{width:28px;height:28px;border:3px solid #ddd;border-top-color:var(--green);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px}@keyframes spin{to{transform:rotate(360deg)}}
+    #gate{position:fixed;inset:0;z-index:20;background:#edf0ea;display:flex;align-items:center;justify-content:center}.gate-box{width:390px;background:#fff;padding:34px;border-radius:18px;box-shadow:0 18px 55px #18312a28}.gate-box .brand{margin-bottom:25px}.gate-box label{display:block;font-size:13px;font-weight:700;margin:13px 0 6px}.gate-box input[type=email],.gate-box input[type=password],.gate-box input[type=text]{width:100%;border:1px solid #bbb;border-radius:9px;padding:12px;font-size:16px}.gate-box button{width:100%;margin-top:18px;padding:13px;background:var(--green);color:#fff;border:0;border-radius:10px;font-weight:800;font-size:16px;cursor:pointer}.keep{font-weight:400!important}.keep input{margin-right:7px}#gateErr{color:var(--red);font-size:13px;margin-top:12px}
+  </style>
+</head>
+<body>
+<script>
+const GAS_API="https://script.google.com/macros/s/AKfycbxQD6oMx5DZXCLta3gsczBFjbL2ghykR0CMxBtMTezo8ZWu73nXaWYZgsU7UAKebZO-Hg/exec";
+</script>
+<div id="gate">
+  <div class="gate-box">
+    <div class="brand"><div class="logo">振</div><div><h1>振込照合デスク</h1><small>社内共通ログイン</small></div></div>
+    <label>メールアドレス</label><input id="gateMail" type="email" autocomplete="username">
+    <label>パスワード</label><input id="gatePass" type="password" autocomplete="current-password">
+    <label class="keep"><input id="gateKeep" type="checkbox" checked>この端末でログインを保持する</label>
+    <button id="gateBtn">ログイン</button><div id="gateErr"></div>
+  </div>
+</div>
+<header>
+  <div class="brand"><div class="logo">振</div><div><h1>振込照合デスク</h1><div class="live" id="status">● 読込中</div></div></div>
+  <button class="logout" id="logout">ログアウト</button>
+</header>
+<main>
+  <section><div class="section-title"><h2 id="monthTitle">15日 総合振込</h2><span>銀行画面と1社ずつ照合してください</span></div><div id="cards"><div class="loading"><div class="spin"></div>振込データを読み込んでいます</div></div></section>
+  <aside>
+    <div class="panel"><div class="progress-label" id="progress">0/0社 照合済み</div><div class="bar"><i id="bar"></i></div></div>
+    <div class="panel"><div class="total-label">WEB-FB CSV 合計</div><div class="total" id="csvTotal">¥0</div><div class="row"><span>シート C27 合計</span><b id="sheetTotal">¥0</b></div><div class="row diff"><span>差額</span><b id="difference">¥0</b></div><div id="diffNote" class="foot"></div></div>
+    <button class="download" id="download" disabled>⬇ 振込CSVをダウンロード</button>
+    <div class="panel warning" id="warnings" hidden><h3>⚠ 警告：CSV未収載</h3><div id="warningList"></div></div>
+    <div class="panel minor" id="denshi" hidden><h3>電子（でんさい）扱い</h3><div id="denshiList"></div><div class="foot">振込CSVの対象外です。</div></div>
+    <div class="panel howto"><h3>使い方</h3><div>1. CSVをWEB-FBの「ファイル持込」へ</div><div>2. 金額と口座を1社ずつ照合✓</div><div>3. 最終確定は必ず本人が実行</div><div class="foot">請求書フォルダ：未払い請求書キューのフォルダIDを確認後、リンクを設定してください。</div></div>
+  </aside>
+</main>
+<script>
+const CRED_KEY="furikomi_check_cred",SSO_KEY="hayazai_sso_cred";
+const SSO_PEERS=["hayazai_board_cred","hayazai_seiso_cred","hayazai_rulebook_cred","hayazai_kaizen_cred","notify_creds_v1","seinodesk_cred","faxdesk_cred","orderdesk_cred","nippou_cred"];
+const $=id=>document.getElementById(id),yen=n=>"¥"+Number(n||0).toLocaleString("ja-JP");
+let DATA=null;
+function findCred(){for(const k of [CRED_KEY,SSO_KEY,...SSO_PEERS]){try{const v=JSON.parse(localStorage.getItem(k)||sessionStorage.getItem(k)||"null");if(v){const email=v.email||v.e,pass=v.pass||v.p;if(email&&pass)return{email:String(email),pass:String(pass)}}}catch(e){}}return null}
+function saveCred(c,keep){const s=JSON.stringify(c);(keep?localStorage:sessionStorage).setItem(CRED_KEY,s);localStorage.setItem(SSO_KEY,s)}
+function clearCred(){localStorage.removeItem(CRED_KEY);sessionStorage.removeItem(CRED_KEY);localStorage.removeItem(SSO_KEY)}
+async function load(c){
+  $("gateErr").textContent="";$("status").textContent="● 読込中";
+  try{const r=await fetch(GAS_API+"?pass="+encodeURIComponent(c.pass)+"&action=furikomi");const j=await r.json();if(j.error==="auth")throw new Error("メールアドレスまたはパスワードが違います");if(j.error)throw new Error(j.message||"データを取得できません");DATA=j;$("gate").style.display="none";render()}
+  catch(e){$("gate").style.display="flex";$("gateErr").textContent=e.message||"接続できません";$("status").textContent="● エラー"}
+}
+function render(){
+  $("status").textContent="● ライブ";$("monthTitle").textContent=DATA.month+"月15日 総合振込";
+  const targets=DATA.items.filter(x=>x.method==="振込"&&x.ok),key="furikomi_check_"+String(new Date().getFullYear())+String(DATA.month).padStart(2,"0");
+  let checked={};try{checked=JSON.parse(localStorage.getItem(key)||"{}")}catch(e){}
+  $("cards").innerHTML=targets.length?targets.map((x,i)=>`<article class="card" data-i="${i}"><div class="card-main"><div class="company">${esc(x.name)}</div><div class="amount">${yen(x.amount)}</div><div class="bank"><span>${esc(x.bankName)}</span><span>${esc(x.branchName)}</span><span>科目 ${esc(x.accountType)}</span><span>口座 ${esc(x.accountNumber.padStart(7,"0"))}</span><span>${esc(x.recipient)}</span></div></div><label class="check"><input type="checkbox" ${checked[x.name]?"checked":""}>照合✓</label></article>`).join(""):`<div class="empty">現在、口座情報が揃った振込対象はありません。<br>右の警告を確認してください。</div>`;
+  document.querySelectorAll(".card input").forEach((box,i)=>box.onchange=()=>{checked[targets[i].name]=box.checked;localStorage.setItem(key,JSON.stringify(checked));updateCards()});
+  function updateCards(){let n=0,first=false;document.querySelectorAll(".card").forEach(c=>{const on=c.querySelector("input").checked;c.classList.toggle("checked",on);c.classList.remove("next");if(on)n++;else if(!first){c.classList.add("next");first=true}});$("progress").textContent=n+"/"+targets.length+"社 照合済み";$("bar").style.width=(targets.length?n/targets.length*100:0)+"%"}updateCards();
+  $("csvTotal").textContent=yen(DATA.csvTotal);$("sheetTotal").textContent=yen(DATA.sheetTotal);$("difference").textContent=yen(DATA.sheetTotal-DATA.csvTotal);
+  const denshiTotal=DATA.denshiItems.reduce((s,x)=>s+x.amount,0);$("diffNote").textContent=denshiTotal?"差額のうち電子扱い "+yen(denshiTotal):"";
+  $("warnings").hidden=!DATA.warnItems.length;$("warningList").innerHTML=DATA.warnItems.map(x=>`<div class="warn-item"><b>${esc(x.name)}（${yen(x.amount)}）</b>${x.warnings.map(esc).join("／")}</div>`).join("");
+  $("denshi").hidden=!DATA.denshiItems.length;$("denshiList").innerHTML=DATA.denshiItems.map(x=>`<div class="minor-item"><span>${esc(x.name)}</span><b>${yen(x.amount)}</b></div>`).join("");
+  $("download").disabled=!DATA.csvBase64||!DATA.csvCount;
+}
+function esc(s){return String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]))}
+$("download").onclick=()=>{const bin=atob(DATA.csvBase64),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([bytes],{type:"text/csv"}));a.download=DATA.csvFileName;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)};
+$("gateBtn").onclick=()=>{const c={email:$("gateMail").value.trim(),pass:$("gatePass").value};if(!c.email||!c.pass)return;saveCred(c,$("gateKeep").checked);load(c)};
+["gateMail","gatePass"].forEach(id=>$(id).addEventListener("keydown",e=>{if(e.key==="Enter")$("gateBtn").click()}));
+$("logout").onclick=()=>{if(confirm("ログアウトしますか？")){clearCred();location.reload()}};
+const c=findCred();if(c){$("gate").style.display="none";load(c)}else $("gateMail").focus();
+</script>
+</body>
+</html>
